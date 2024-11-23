@@ -180,7 +180,7 @@ if __name__ == "__main__":
         folder_path = sys.argv[1]
     else:
         # If no argument is provided, use the default path.
-        folder_path = r"C:\Users\EMQuest\Desktop\Starke\Scripting\Test_Time_Calculator\Table Data"
+        folder_path = r""
 
     total_test_time, file_count, test_times = calculate_total_test_time(
         folder_path)
