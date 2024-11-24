@@ -47,6 +47,18 @@ IF NOT EXIST "total_test_time.txt" (
   )
 )
 
+IF NOT EXIST "test_times.csv" (
+  ECHO Error: Result spreadsheet not found.
+  PAUSE
+  EXIT /B 1
+) ELSE (
+  FOR %%A IN ("test_times.csv") DO IF %%~zA EQU 0 (
+    ECHO Error: Result spreadsheet is empty.
+    PAUSE
+    EXIT /B 1
+  )
+)
+
 REM Display the result.
 ECHO.
 TYPE total_test_time.txt
