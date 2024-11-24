@@ -16,6 +16,7 @@ This Python script calculates the total test time from a set of CSV files in a s
 * Calculates the float time based on the total test time and user-provided completion or start time.
 * Formats the output to display individual test times and the total test time.
 * Writes the results to a text file named "total_test_time.txt".
+* **Exports the results to a CSV file named "test_times.csv" with summary information (Total Test Time, Total Work Time, Float Time) and detailed test times for each file.**
 
 **Usage**
 
@@ -24,7 +25,7 @@ This Python script calculates the total test time from a set of CSV files in a s
 3. Open a terminal or command prompt and navigate to the directory.
 4. Run the script using the command `python test_time_calculator.py`.
 5. The script will prompt you to enter the completion time or start time in `HH:MM:SS` or `HHMM` format.
-6. The results will be displayed in the terminal and saved to "total_test_time.txt".
+6. The results will be displayed in the terminal and saved to "total_test_time.txt" and "test_times.csv".
 
 ## Batch Script
 
