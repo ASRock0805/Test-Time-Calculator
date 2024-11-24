@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
-
+import csv
 
 def read_file(file_path, encoding='utf-8'):
     """Reads the content of a file.
@@ -23,12 +23,12 @@ def extract_time_from_string(file_content, pattern):
     Args:
         file_content (str): The string containing the time information.
         pattern (str): The regex pattern to match the time string.
-                The pattern should include a capturing group to extract
-                the time information.
+            The pattern should include a capturing group to extract
+            the time information.
 
     Returns:
         datetime or None: The extracted time information as a datetime object,
-                          or None if no match is found.
+                         or None if no match is found.
 
     Raises:
         re.error: If the given regular expression is invalid.
@@ -60,11 +60,11 @@ def extract_time(file_content, time_label):
     Args:
         file_content (str): The content of the file as a single string.
         time_label (str): The label of the time to extract 
-                          (e.g., "Test Start Time", "Test End Time").
+                         (e.g., "Test Start Time", "Test End Time").
 
     Returns:
         datetime or None: The extracted time as a datetime object, 
-                          or None if the time could not be extracted.
+                         or None if the time could not be extracted.
     """
     # Try matching with both time formats
     patterns = [
@@ -88,7 +88,7 @@ def extract_test_times(file_path):
 
     Returns:
         tuple: A tuple containing the "Test Start Time" and "Test End Time" as
-                datetime objects, or None if an error occurs.
+              datetime objects, or None if an error occurs.
     """
     try:
         file_content = read_file(file_path)
@@ -112,8 +112,8 @@ def calculate_total_test_time(folder_path):
 
     Returns:
         tuple: A tuple containing the total test time, the number of CSV files
-               processed, and a list of tuples with start time, end time, and
-               test time for each file.
+              processed, and a list of tuples with start time, end time, and
+              test time for each file.
     """
     total_time = timedelta(0)
     file_count = 0
@@ -128,7 +128,7 @@ def calculate_total_test_time(folder_path):
                 test_time = end_time - start_time
                 total_time += test_time
                 file_count += 1
-                test_times.append((start_time, end_time, test_time))
+                test_times.append((start_time, end_time, test_time, file_path.name))
 
     return total_time, file_count, test_times
 
@@ -146,9 +146,9 @@ def format_test_times(test_times):
     # Sort test times by start time in ascending order
     test_times.sort(key=lambda x: x[0])
     output_str = ""
-    for i, (start_time, end_time, test_time) in enumerate(test_times):
+    for i, (start_time, end_time, test_time, filename) in enumerate(test_times):
         formatted_test_time = str(test_time).split()[-1]
-        output_str += f"[{i+1}] Start Time: {start_time.strftime('%H:%M:%S')}, End Time: {end_time.strftime('%H:%M:%S')}, Test Time: {formatted_test_time}\n"
+        output_str += f"[{i+1}] File: {filename}, Start Time: {start_time.strftime('%H:%M:%S')}, End Time: {end_time.strftime('%H:%M:%S')}, Test Time: {formatted_test_time}\n"
     return output_str
 
 
@@ -189,6 +189,48 @@ def calculate_float_time(total_test_time, completion_time, start_time):
         return None, False
 
 
+def export_to_spreadsheet(test_times, total_test_time, float_time, completion_time, start_time):
+    """Exports the test times to a spreadsheet.
+
+    Args:
+        test_times (list): A list of tuples with start time, end time, and test time for each file.
+        total_test_time (timedelta): The total test time.
+        float_time (timedelta): The float time.
+        completion_time (str): The completion time.
+        start_time (str): The start time.
+    """
+    try:
+        with open('test_times.csv', 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            
+            # Calculate total work time
+            total_work_time = timedelta(0)
+            if completion_time and start_time:
+                float_time, success = calculate_float_time(total_test_time, completion_time, start_time)
+                if success:
+                    total_work_time = total_test_time + float_time
+
+            # Write summary information first
+            writer.writerow(["Total Test Time", total_test_time])
+            writer.writerow(["Total Work Time", total_work_time])
+            writer.writerow(["Float Time", float_time])
+            writer.writerow([])  # Add an empty row to separate summary from details
+
+            # Write the header row for detailed test times
+            writer.writerow(["File", "Start Time", "End Time", "Test Time"])
+
+            for start_time, end_time, test_time, filename in test_times:
+                writer.writerow([filename, 
+                                 start_time.strftime('%Y-%m-%d %H:%M:%S'), 
+                                 end_time.strftime('%Y-%m-%d %H:%M:%S'), 
+                                 test_time])
+
+        print("Test times exported to test_times.csv")
+    except Exception as e:
+        print(f"Error exporting to spreadsheet: {e}")
+
+
+
 if __name__ == "__main__":
     """
     This script calculates the total test time from all CSV files in a given folder.
@@ -204,23 +246,17 @@ if __name__ == "__main__":
         # If no argument is provided, use the default path.
         folder_path = r""
 
-    total_test_time, file_count, test_times = calculate_total_test_time(
-        folder_path)
+    total_test_time, file_count, test_times = calculate_total_test_time(folder_path)
 
     # Format the test times string
     test_times_str = format_test_times(test_times)
 
     # Get completion time or start time from user input
-    completion_time = input(
-        "Enter completion time in HH:MM:SS or HHMM format (or press Enter to skip): "
-    )
-    start_time = input(
-        "Enter start time in HH:MM:SS or HHMM format (or press Enter to skip): "
-    )
+    completion_time = input("Enter completion time in HH:MM:SS or HHMM format (or press Enter to skip): ")
+    start_time = input("Enter start time in HH:MM:SS or HHMM format (or press Enter to skip): ")
 
     # Calculate float time
-    float_time, success = calculate_float_time(total_test_time,
-                                               completion_time, start_time)
+    float_time, success = calculate_float_time(total_test_time, completion_time, start_time)
 
     # Write the result to a text file.
     output_file_path = Path("./total_test_time.txt")
@@ -240,3 +276,6 @@ if __name__ == "__main__":
     if success:
         print(f"Float time: {float_time}")
     print(f"Result saved to: {output_file_path.absolute()}")
+
+    # Export to spreadsheet
+    export_to_spreadsheet(test_times, total_test_time, float_time, completion_time, start_time)
